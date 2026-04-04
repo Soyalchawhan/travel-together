@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL:'https://travel-together-api.onrender.com/api',
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -14,6 +14,8 @@ api.interceptors.request.use((config) => {
 
 // Handle 401 globally
 api.interceptors.response.use(
+
+
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {

@@ -36,7 +36,7 @@ export default function ChatSection() {
 
   // Socket.IO setup
   useEffect(() => {
-    socket = io('/', { transports: ['websocket', 'polling'] })
+    socket = io('https://travel-together-api.onrender.com', { transports: ['websocket', 'polling'] })
     socket.emit('joinTrip', id)
 
     socket.on('newMessage', (msg) => {
