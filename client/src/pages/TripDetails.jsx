@@ -1,0 +1,273 @@
+import { useState, useEffect } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import { tripsAPI } from '../services/api'
+import { useAuth } from '../context/AuthContext'
+import {
+  MapPin, Calendar, Users, DollarSign, MessageSquare,
+  Plus, Clock, Copy, Check, Loader, ChevronLeft, Receipt
+} from 'lucide-react'
+
+export default function TripDetails() {
+  const { id } = useParams()
+  const { user } = useAuth()
+  const [trip, setTrip] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [copied, setCopied] = useState(false)
+  const [showAddItem, setShowAddItem] = useState(false)
+  const [itemForm, setItemForm] = useState({ title: '', description: '', date: '', time: '' })
+  const [addingItem, setAddingItem] = useState(false)
+
+  useEffect(() => {
+    tripsAPI.getById(id)
+      .then(({ data }) => setTrip(data))
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [id])
+
+  const copyCode = () => {
+    navigator.clipboard.writeText(trip.inviteCode)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleAddItem = async (e) => {
+    e.preventDefault()
+    setAddingItem(true)
+    try {
+      const { data } = await tripsAPI.addItinerary(id, itemForm)
+      setTrip({ ...trip, itinerary: data })
+      setShowAddItem(false)
+      setItemForm({ title: '', description: '', date: '', time: '' })
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setAddingItem(false)
+    }
+  }
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <Loader className="animate-spin text-blue-500" size={32} />
+    </div>
+  )
+
+  if (!trip) return (
+    <div className="text-center py-20">
+      <div className="text-5xl mb-3">🔍</div>
+      <p className="text-gray-500">Trip not found</p>
+    </div>
+  )
+
+  const sortedItinerary = [...(trip.itinerary || [])].sort((a, b) => {
+    if (a.date && b.date) return new Date(a.date) - new Date(b.date)
+    return 0
+  })
+
+  return (
+    <div>
+      {/* Back link */}
+      <Link to="/" className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-5">
+        <ChevronLeft size={16} /> Back to Dashboard
+      </Link>
+
+      {/* Trip Header */}
+      <div className="card mb-6 bg-gradient-to-r from-blue-600 to-indigo-700 text-white border-0">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold mb-1">{trip.title}</h1>
+            <p className="flex items-center gap-1.5 text-blue-100">
+              <MapPin size={15} /> {trip.destination}
+            </p>
+            {trip.description && <p className="text-blue-200 text-sm mt-2">{trip.description}</p>}
+          </div>
+          <div className="shrink-0">
+            <button
+              onClick={copyCode}
+              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-lg text-sm transition-colors"
+            >
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+              <span className="font-mono font-bold">{trip.inviteCode}</span>
+            </button>
+            <p className="text-blue-200 text-xs mt-1 text-center">Click to copy invite code</p>
+          </div>
+        </div>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-4 mt-5 pt-5 border-t border-white/20">
+          <div>
+            <div className="flex items-center gap-1.5 text-blue-200 text-xs mb-0.5">
+              <Calendar size={12} /> Dates
+            </div>
+            <p className="font-semibold text-sm">
+              {new Date(trip.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+              {' – '}
+              {new Date(trip.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+            </p>
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5 text-blue-200 text-xs mb-0.5">
+              <DollarSign size={12} /> Budget
+            </div>
+            <p className="font-semibold text-sm">₹{Number(trip.budget).toLocaleString('en-IN')}</p>
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5 text-blue-200 text-xs mb-0.5">
+              <Users size={12} /> Members
+            </div>
+            <p className="font-semibold text-sm">{trip.members?.length}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+        <Link to={`/trips/${id}/expenses`}
+          className="card flex items-center gap-3 hover:shadow-md transition-all hover:-translate-y-0.5 cursor-pointer">
+          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+            <Receipt size={18} className="text-green-600" />
+          </div>
+          <div>
+            <p className="font-semibold text-gray-800 text-sm">Expenses</p>
+            <p className="text-xs text-gray-500">Track & split costs</p>
+          </div>
+        </Link>
+        <Link to={`/trips/${id}/chat`}
+          className="card flex items-center gap-3 hover:shadow-md transition-all hover:-translate-y-0.5 cursor-pointer">
+          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+            <MessageSquare size={18} className="text-purple-600" />
+          </div>
+          <div>
+            <p className="font-semibold text-gray-800 text-sm">Group Chat</p>
+            <p className="text-xs text-gray-500">Talk with the group</p>
+          </div>
+        </Link>
+        <div className="card flex items-center gap-3 col-span-2 sm:col-span-1">
+          <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+            <Users size={18} className="text-amber-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-gray-800 text-sm">Members</p>
+            <p className="text-xs text-gray-500 truncate">
+              {trip.members?.map((m) => m.name).join(', ')}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Members Section */}
+      <div className="card mb-6">
+        <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <Users size={18} className="text-blue-600" /> Trip Members
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {trip.members?.map((member) => (
+            <div key={member._id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold shrink-0">
+                {member.name?.[0]?.toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold text-sm text-gray-800 truncate">{member.name}</p>
+                <p className="text-xs text-gray-500 capitalize">{member.preferences?.travelStyle || 'traveler'}</p>
+                {member._id === trip.createdBy?._id && (
+                  <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">Organizer</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Itinerary Section */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <Calendar size={18} className="text-blue-600" /> Itinerary
+          </h2>
+          <button
+            onClick={() => setShowAddItem(!showAddItem)}
+            className="btn-primary flex items-center gap-1 text-sm py-1.5 px-3"
+          >
+            <Plus size={15} /> Add Plan
+          </button>
+        </div>
+
+        {/* Add Item Form */}
+        {showAddItem && (
+          <form onSubmit={handleAddItem} className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className="label">Activity Title *</label>
+                <input className="input bg-white" placeholder="Beach Day at Calangute" value={itemForm.title}
+                  onChange={(e) => setItemForm({ ...itemForm, title: e.target.value })} required />
+              </div>
+              <div>
+                <label className="label">Date</label>
+                <input type="date" className="input bg-white" value={itemForm.date}
+                  onChange={(e) => setItemForm({ ...itemForm, date: e.target.value })} />
+              </div>
+              <div>
+                <label className="label">Time</label>
+                <input type="time" className="input bg-white" value={itemForm.time}
+                  onChange={(e) => setItemForm({ ...itemForm, time: e.target.value })} />
+              </div>
+              <div className="col-span-2">
+                <label className="label">Description</label>
+                <input className="input bg-white" placeholder="Details about the activity" value={itemForm.description}
+                  onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })} />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button type="submit" className="btn-primary text-sm" disabled={addingItem}>
+                {addingItem ? 'Adding...' : 'Add to Itinerary'}
+              </button>
+              <button type="button" className="btn-secondary text-sm" onClick={() => setShowAddItem(false)}>Cancel</button>
+            </div>
+          </form>
+        )}
+
+        {/* Itinerary List */}
+        {sortedItinerary.length === 0 ? (
+          <div className="text-center py-10 text-gray-400">
+            <Calendar size={36} className="mx-auto mb-2 opacity-40" />
+            <p className="text-sm">No itinerary planned yet. Add some activities!</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {sortedItinerary.map((item, idx) => (
+              <div key={item._id} className="flex gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                <div className="flex flex-col items-center shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center">
+                    {idx + 1}
+                  </div>
+                  {idx < sortedItinerary.length - 1 && (
+                    <div className="w-0.5 h-full bg-blue-200 mt-2" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-semibold text-gray-800">{item.title}</h4>
+                  {item.description && <p className="text-sm text-gray-500 mt-0.5">{item.description}</p>}
+                  <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-400">
+                    {item.date && (
+                      <span className="flex items-center gap-1">
+                        <Calendar size={11} />
+                        {new Date(item.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      </span>
+                    )}
+                    {item.time && (
+                      <span className="flex items-center gap-1">
+                        <Clock size={11} /> {item.time}
+                      </span>
+                    )}
+                    {item.addedBy && (
+                      <span>by {item.addedBy.name}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
