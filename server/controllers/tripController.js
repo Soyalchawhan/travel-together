@@ -7,19 +7,13 @@ exports.createTrip = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required' });
 
     const trip = await Trip.create({
-      title,
-      destination,
-      description,
-      budget,
-      startDate,
-      endDate,
+      title, destination, description, budget, startDate, endDate,
       createdBy: req.user.id,
       members: [req.user.id],
     });
 
     await trip.populate('members', 'name email preferences');
     await trip.populate('createdBy', 'name email');
-
     res.status(201).json(trip);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -33,6 +27,7 @@ exports.joinTrip = async (req, res) => {
 
     const trip = await Trip.findOne({ inviteCode: inviteCode.toUpperCase() });
     if (!trip) return res.status(404).json({ message: 'No trip found with this invite code' });
+    if (trip.status === 'cancelled') return res.status(400).json({ message: 'This trip has been cancelled' });
 
     const alreadyMember = trip.members.some((m) => m.toString() === req.user.id);
     if (alreadyMember) return res.status(400).json({ message: 'You are already a member of this trip' });
@@ -41,7 +36,6 @@ exports.joinTrip = async (req, res) => {
     await trip.save();
     await trip.populate('members', 'name email preferences');
     await trip.populate('createdBy', 'name email');
-
     res.json(trip);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -92,8 +86,80 @@ exports.addItinerary = async (req, res) => {
     trip.itinerary.push({ title, description, date, time, addedBy: req.user.id });
     await trip.save();
     await trip.populate('itinerary.addedBy', 'name');
-
     res.json(trip.itinerary);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// ── Cancel trip (only organizer, sets status to cancelled) ──
+exports.cancelTrip = async (req, res) => {
+  try {
+    const trip = await Trip.findById(req.params.id);
+    if (!trip) return res.status(404).json({ message: 'Trip not found' });
+
+    if (trip.createdBy.toString() !== req.user.id)
+      return res.status(403).json({ message: 'Only the trip organizer can cancel this trip' });
+
+    if (trip.status === 'cancelled')
+      return res.status(400).json({ message: 'Trip is already cancelled' });
+
+    trip.status = 'cancelled';
+    await trip.save();
+    res.json({ message: 'Trip cancelled successfully', trip });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// ── Delete trip (only organizer, permanently removes) ──
+exports.deleteTrip = async (req, res) => {
+  try {
+    const trip = await Trip.findById(req.params.id);
+    if (!trip) return res.status(404).json({ message: 'Trip not found' });
+
+    if (trip.createdBy.toString() !== req.user.id)
+      return res.status(403).json({ message: 'Only the trip organizer can delete this trip' });
+
+    await Trip.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Trip deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// ── Leave trip (non-organizer removes themselves) ──
+exports.leaveTrip = async (req, res) => {
+  try {
+    const trip = await Trip.findById(req.params.id);
+    if (!trip) return res.status(404).json({ message: 'Trip not found' });
+
+    if (trip.createdBy.toString() === req.user.id)
+      return res.status(400).json({ message: 'You are the organizer. Cancel or delete the trip instead.' });
+
+    const isMember = trip.members.some((m) => m.toString() === req.user.id);
+    if (!isMember) return res.status(400).json({ message: 'You are not a member of this trip' });
+
+    trip.members = trip.members.filter((m) => m.toString() !== req.user.id);
+    await trip.save();
+    res.json({ message: 'You have left the trip' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// ── Mark trip as completed ──
+exports.completeTrip = async (req, res) => {
+  try {
+    const trip = await Trip.findById(req.params.id);
+    if (!trip) return res.status(404).json({ message: 'Trip not found' });
+
+    if (trip.createdBy.toString() !== req.user.id)
+      return res.status(403).json({ message: 'Only the organizer can mark this trip as completed' });
+
+    trip.status = 'completed';
+    await trip.save();
+    res.json({ message: 'Trip marked as completed', trip });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
