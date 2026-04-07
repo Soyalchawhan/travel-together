@@ -1,229 +1,140 @@
-# ✈️ TravelTogether — Collaborative Travel Planning & Cost Schedule
+# TravelTogether
 
-A full-stack web app for collaborative group trip planning, expense splitting, traveler matching, and real-time group chat.
-
----
-
-## 🧩 Features
-
-| Feature | Details |
-|---|---|
-| 🔐 Authentication | JWT-based signup/login with profile preferences |
-| 🗺️ Trip Management | Create trips, join via invite code, view all trips |
-| 💸 Expense Tracking | Add expenses with equal or custom splits, see who owes whom |
-| 👥 Traveler Matching | Match with compatible travelers by budget, style & interests |
-| 💬 Real-time Chat | Group chat per trip powered by Socket.IO |
-| 📅 Itinerary Planner | Add daily activities with dates and times |
-| ✨ AI Trip Suggestions | Personalized destination ideas based on travel style |
+A web app I built to solve a real problem — planning trips with a group of people is genuinely painful. Someone's always chasing payments, nobody agrees on the itinerary, and half the planning happens across three different WhatsApp groups. I wanted everything in one place, so I built this.
 
 ---
 
-## 🏗️ Folder Structure
+## What it does
 
-```
-travel-planner/
-├── server/                    # Node.js + Express backend
-│   ├── controllers/           # Business logic
-│   │   ├── authController.js
-│   │   ├── tripController.js
-│   │   ├── expenseController.js
-│   │   ├── matchController.js
-│   │   └── messageController.js
-│   ├── routes/                # REST API routes
-│   │   ├── auth.js
-│   │   ├── trips.js
-│   │   ├── expenses.js
-│   │   ├── match.js
-│   │   └── messages.js
-│   ├── models/                # Mongoose schemas
-│   │   ├── User.js
-│   │   ├── Trip.js
-│   │   ├── Expense.js
-│   │   └── Message.js
-│   ├── middleware/
-│   │   └── auth.js            # JWT middleware
-│   ├── server.js              # Entry point + Socket.IO
-│   ├── seed.js                # Database seeder with dummy data
-│   └── package.json
-│
-└── client/                    # React (Vite) frontend
-    ├── src/
-    │   ├── pages/
-    │   │   ├── Login.jsx
-    │   │   ├── Signup.jsx
-    │   │   ├── Dashboard.jsx
-    │   │   ├── TripDetails.jsx
-    │   │   ├── ExpenseTracker.jsx
-    │   │   ├── ChatSection.jsx
-    │   │   └── Matches.jsx
-    │   ├── components/
-    │   │   └── Navbar.jsx
-    │   ├── context/
-    │   │   └── AuthContext.jsx
-    │   ├── services/
-    │   │   └── api.js         # Axios API service layer
-    │   ├── App.jsx
-    │   ├── main.jsx
-    │   └── index.css
-    ├── vite.config.js         # Dev server with proxy
-    ├── tailwind.config.js
-    └── package.json
-```
+You create a trip, get an invite code, share it with your friends, and everyone's in. From there you can plan the itinerary together, add expenses and split them however you want, chat with the group in real time, and if you're looking for travel partners, there's a matching feature that compares your travel preferences with other users and gives you a compatibility score.
+
+The expense splitting was the main thing I wanted to get right. You add an expense, pick who's splitting it, choose equal or custom amounts, and the app keeps a running balance of who owes whom across the entire trip. No more mental math at 11pm trying to figure out who still owes for the hotel.
 
 ---
 
-## 🚀 Quick Start
+## Tech stack
 
-### Prerequisites
-
-- Node.js v18+
-- MongoDB (local or [MongoDB Atlas](https://cloud.mongodb.com))
+I used React with Vite for the frontend because it's fast and the dev experience is good. Tailwind for styling — once you get used to it you can't go back. The backend is Node.js with Express, MongoDB with Mongoose for the database, and Socket.IO for the real-time chat. Authentication is JWT-based with bcrypt for password hashing.
 
 ---
 
-### 1. Clone & Setup
+## Getting it running locally
 
-```bash
-# No git needed — just unzip and go!
-cd travel-planner
-```
+You'll need Node.js (v18 or above) and MongoDB installed, or you can use MongoDB Atlas if you don't want to install it locally.
 
-### 2. Backend Setup
+Clone the repo and go into the project folder. There are two parts to start — the server and the client.
+
+For the server:
 
 ```bash
 cd server
-
-# Copy and configure environment
 cp .env.example .env
-# Edit .env if needed (default works with local MongoDB)
-
-# Install dependencies
 npm install
-
-# Seed the database with demo data (optional but recommended)
 npm run seed
-
-# Start the server
 npm run dev
-# → Runs on http://localhost:5000
 ```
 
-### 3. Frontend Setup
+The seed command fills the database with some demo users and trips so you have something to look at straight away. The server runs on port 5000.
+
+For the client, open a second terminal:
 
 ```bash
-cd ../client
-
-# Install dependencies
+cd client
 npm install
-
-# Start the dev server
 npm run dev
-# → Runs on http://localhost:3000
 ```
 
-Open **http://localhost:3000** in your browser 🎉
+That runs on port 3000. Open it in your browser and you should see the login page.
 
 ---
 
-## 🔑 Environment Variables
+## Environment variables
 
-**server/.env**
+The `.env.example` file in the server folder has everything you need. The three things you need to set are:
 
-```env
+```
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/travel-planner
-JWT_SECRET=supersecretjwtkey123_changethis
+JWT_SECRET=make_this_something_random
 ```
 
-For MongoDB Atlas, replace `MONGODB_URI` with your connection string.
+If you're using Atlas, just swap the MONGODB_URI with your connection string.
 
 ---
 
-## 🧪 Demo Accounts
+## Demo accounts
 
-After running `npm run seed`:
+After running the seed script, these accounts are ready to use:
 
-| Email | Password | Name |
-|---|---|---|
-| test@example.com | password123 | Test User |
-| alice@example.com | password123 | Alice Johnson |
-| bob@example.com | password123 | Bob Smith |
-| carol@example.com | password123 | Carol Davis |
+- test@example.com
+- alice@example.com
+- bob@example.com
+- carol@example.com
 
-**Trip Invite Codes:**
-- `GOA123` — Goa Beach Getaway (3 members, expenses, itinerary, messages)
-- `PAR456` — Paris & Beyond
+Password for all of them is `password123`.
+
+There's also a Goa trip already set up with expenses, messages and an itinerary if you want to see how everything looks with real data. The invite code for it is `GOA123` and the Paris trip is `PAR456`.
 
 ---
 
-## 📡 API Reference
+## Folder structure
 
-### Auth
 ```
-POST /api/auth/signup    — Register new user
-POST /api/auth/login     — Login, get JWT
-GET  /api/auth/me        — Get logged-in user
-```
-
-### Trips
-```
-GET  /api/trips          — Get all user's trips
-POST /api/trips          — Create trip
-POST /api/trips/join     — Join trip by invite code
-GET  /api/trips/:id      — Get trip details
-POST /api/trips/:id/itinerary — Add itinerary item
-```
-
-### Expenses
-```
-POST /api/expenses                      — Add expense
-GET  /api/expenses/trip/:tripId         — Get trip expenses
-GET  /api/expenses/trip/:tripId/balances — Get balance summary
+travel-planner/
+├── server/
+│   ├── controllers/
+│   ├── routes/
+│   ├── models/
+│   ├── middleware/
+│   ├── server.js
+│   └── seed.js
+└── client/
+    └── src/
+        ├── pages/
+        ├── components/
+        ├── context/
+        └── services/
 ```
 
-### Match
-```
-GET /api/match           — Get compatible traveler matches
-```
+Nothing fancy. Controllers handle the business logic, routes just wire up the endpoints, models are the Mongoose schemas. On the frontend, pages are the full page components, components are the smaller reusable bits, and services/api.js is where all the axios calls live.
 
-### Messages
+---
+
+## API endpoints
+
 ```
-GET  /api/messages/:tripId  — Get trip messages
-POST /api/messages/:tripId  — Send message
+POST   /api/auth/signup
+POST   /api/auth/login
+GET    /api/auth/me
+
+GET    /api/trips
+POST   /api/trips
+POST   /api/trips/join
+GET    /api/trips/:id
+POST   /api/trips/:id/itinerary
+
+POST   /api/expenses
+GET    /api/expenses/trip/:tripId
+GET    /api/expenses/trip/:tripId/balances
+
+GET    /api/match
+
+GET    /api/messages/:tripId
+POST   /api/messages/:tripId
 ```
 
 ---
 
-## ⚡ Tech Stack
+## Known limitations
 
-| Layer | Technology |
-|---|---|
-| Frontend | React 18 + Vite |
-| Styling | Tailwind CSS |
-| Icons | Lucide React |
-| Routing | React Router v6 |
-| HTTP Client | Axios |
-| Backend | Node.js + Express |
-| Database | MongoDB + Mongoose |
-| Auth | JWT + bcryptjs |
-| Real-time | Socket.IO |
+The free tier on Render spins down after inactivity so the first request after a while takes about 30 seconds to wake up. Nothing you can do about that on the free plan, just something to be aware of if you're demoing it.
+
+The matching algorithm is basic — it works well enough for a prototype but a real version would need more data points and probably let you filter by travel dates too.
+
+Real-time chat works well but if you have the tab open in multiple windows you might see duplicate messages in some edge cases. It's on the list to fix.
 
 ---
 
-## 💡 How Real-time Chat Works
+## Why I built this
 
-1. Client connects to Socket.IO server on page load
-2. Client emits `joinTrip(tripId)` to enter a room
-3. On send: message saved to DB via REST API, then emitted to room via socket
-4. Other clients in the room receive `newMessage` event and update UI instantly
-
----
-
-## 🎯 Matching Algorithm
-
-The compatibility score is calculated from:
-- **Budget range** (40% weight) — Same = 100%, one level apart = 50%, two levels = 0%
-- **Travel style** (30% weight) — Same = 100%, different = 0%
-- **Interest overlap** (30% weight) — Jaccard similarity of interest sets × 100
-
-Final score = weighted average of all factors.
+Honestly started as a hackathon project. My friends and I were planning a trip to Goa and spent more time fighting over a spreadsheet than actually planning the trip. Built the first version in a weekend and kept adding to it. It's not perfect but it solves the actual problem.
