@@ -15,7 +15,7 @@ const io = new Server(server, {
 app.use(cors({
   origin: [
     'http://localhost:3000',
-    /\.vercel\.app$/
+    'https://travel-together-lovat.vercel.app'
   ],
   credentials: true
 }));
