@@ -135,6 +135,12 @@ Real-time chat works well but if you have the tab open in multiple windows you m
 
 ---
 
-## Why I built this
+## 🎯 Matching Algorithm
 
-Honestly started as a hackathon project. My friends and I were planning a trip to Goa and spent more time fighting over a spreadsheet than actually planning the trip. Built the first version in a weekend and kept adding to it. It's not perfect but it solves the actual problem.
+The compatibility score is calculated from:
+
+- **Budget range** (40% weight) — Same = 100%, one level apart = 50%, two levels = 0%
+- **Travel style** (30% weight) — Same = 100%, different = 0%
+- **Interest overlap** (30% weight) — Jaccard similarity of interest sets × 100
+
+Final score = weighted average of all factors.
